@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN" ng-app="heypiano">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hey Piano</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body ng-controller="PianoCtrl as vm">
+    <div class="app">
+      <header class="header">
+        <h1>Hey Piano</h1>
+        <p class="subtitle">用键盘弹奏 · 点击琴键也可以</p>
+      </header>
+
+      <section class="piano-wrap">
+        <div class="piano">
+          <div
+            class="key white"
+            ng-repeat="key in vm.whiteKeys track by key.note"
+            ng-class="{ active: vm.pressed[key.note] }"
+            ng-mousedown="vm.noteDown(key.note)"
+            ng-mouseup="vm.noteUp(key.note)"
+            ng-mouseleave="vm.noteUp(key.note)"
+            ng-touchstart="vm.noteDown(key.note); $event.preventDefault()"
+            ng-touchend="vm.noteUp(key.note)"
+          >
+            <span class="key-label">{{ key.label }}</span>
+            <span class="key-note">{{ key.note }}</span>
+          </div>
+
+          <div
+            class="key black"
+            ng-repeat="key in vm.blackKeys track by key.note"
+            ng-style="{ left: key.left + 'px' }"
+            ng-class="{ active: vm.pressed[key.note] }"
+            ng-mousedown="vm.noteDown(key.note)"
+            ng-mouseup="vm.noteUp(key.note)"
+            ng-mouseleave="vm.noteUp(key.note)"
+            ng-touchstart="vm.noteDown(key.note); $event.preventDefault()"
+            ng-touchend="vm.noteUp(key.note)"
+          >
+            <span class="key-label">{{ key.label }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="hint">
+        <p>
+          白键：
+          <kbd ng-repeat="key in vm.whiteKeys track by key.note">{{ key.label }}</kbd>
+        </p>
+        <p>
+          黑键：
+          <kbd ng-repeat="key in vm.blackKeys track by key.note">{{ key.label }}</kbd>
+        </p>
+      </section>
+    </div>
+
+    <script src="lib/angular.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

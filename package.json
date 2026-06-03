@@ -1,0 +1,21 @@
+{
+  "name": "heypiano",
+  "version": "1.0.0",
+  "description": "A keyboard piano app built with Tauri and AngularJS",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "postinstall": "mkdir -p src/lib && cp node_modules/angular/angular.min.js src/lib/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/npc-emer/heypiano.git"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2"
+  },
+  "dependencies": {
+    "angular": "^1.8.3"
+  }
+}
