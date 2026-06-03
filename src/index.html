@@ -10,20 +10,24 @@
     <div class="app">
       <header class="header">
         <h1>Hey Piano</h1>
-        <p class="subtitle">用键盘弹奏 · 点击琴键也可以</p>
+        <p class="subtitle">三排键盘映射 · 同时显示约 4 个八度（{{ vm.rangeLabel }}）</p>
+        <p class="octave-shift">
+          移调：<strong>{{ vm.octaveShift > 0 ? '+' : '' }}{{ vm.octaveShift }}</strong> 八度
+          · <kbd>←</kbd> <kbd>→</kbd>
+        </p>
       </header>
 
       <section class="piano-wrap">
         <div class="piano">
           <div
             class="key white"
-            ng-repeat="key in vm.whiteKeys track by key.note"
-            ng-class="{ active: vm.pressed[key.note] }"
-            ng-mousedown="vm.noteDown(key.note)"
-            ng-mouseup="vm.noteUp(key.note)"
-            ng-mouseleave="vm.noteUp(key.note)"
-            ng-touchstart="vm.noteDown(key.note); $event.preventDefault()"
-            ng-touchend="vm.noteUp(key.note)"
+            ng-repeat="key in vm.whiteKeys track by key.baseNote"
+            ng-class="{ active: vm.pressed[key.baseNote], disabled: !key.note }"
+            ng-mousedown="vm.noteDown(key.baseNote)"
+            ng-mouseup="vm.noteUp(key.baseNote)"
+            ng-mouseleave="vm.noteUp(key.baseNote)"
+            ng-touchstart="vm.noteDown(key.baseNote); $event.preventDefault()"
+            ng-touchend="vm.noteUp(key.baseNote)"
           >
             <span class="key-label">{{ key.label }}</span>
             <span class="key-note">{{ key.note }}</span>
@@ -31,28 +35,31 @@
 
           <div
             class="key black"
-            ng-repeat="key in vm.blackKeys track by key.note"
+            ng-repeat="key in vm.blackKeys track by key.baseNote"
             ng-style="{ left: key.left + 'px' }"
-            ng-class="{ active: vm.pressed[key.note] }"
-            ng-mousedown="vm.noteDown(key.note)"
-            ng-mouseup="vm.noteUp(key.note)"
-            ng-mouseleave="vm.noteUp(key.note)"
-            ng-touchstart="vm.noteDown(key.note); $event.preventDefault()"
-            ng-touchend="vm.noteUp(key.note)"
+            ng-class="{ active: vm.pressed[key.baseNote], disabled: !key.note }"
+            ng-mousedown="vm.noteDown(key.baseNote)"
+            ng-mouseup="vm.noteUp(key.baseNote)"
+            ng-mouseleave="vm.noteUp(key.baseNote)"
+            ng-touchstart="vm.noteDown(key.baseNote); $event.preventDefault()"
+            ng-touchend="vm.noteUp(key.baseNote)"
           >
             <span class="key-label">{{ key.label }}</span>
+            <span class="key-note">{{ key.note }}</span>
           </div>
         </div>
       </section>
 
       <section class="hint">
+        <p><strong>低音白键</strong> <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>B</kbd> <kbd>N</kbd> <kbd>M</kbd></p>
+        <p><strong>中音白键</strong> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> <kbd>;</kbd> <kbd>'</kbd></p>
+        <p><strong>高音白键</strong> <kbd>W</kbd> <kbd>E</kbd> <kbd>R</kbd> <kbd>T</kbd> <kbd>Y</kbd> <kbd>U</kbd> <kbd>I</kbd> <kbd>O</kbd> <kbd>P</kbd> <kbd>Q</kbd></p>
         <p>
-          白键：
-          <kbd ng-repeat="key in vm.whiteKeys track by key.note">{{ key.label }}</kbd>
-        </p>
-        <p>
-          黑键：
-          <kbd ng-repeat="key in vm.blackKeys track by key.note">{{ key.label }}</kbd>
+          <strong>黑键</strong>
+          <kbd>1</kbd> <kbd>2</kbd> <kbd>4</kbd> <kbd>5</kbd> <kbd>6</kbd>
+          <kbd>3</kbd> <kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd> <kbd>0</kbd>
+          <kbd>-</kbd> <kbd>=</kbd> <kbd>[</kbd> <kbd>]</kbd> <kbd>\</kbd>
+          <kbd>`</kbd> <kbd>,</kbd> <kbd>.</kbd> <kbd>/</kbd>
         </p>
       </section>
     </div>

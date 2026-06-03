@@ -13,7 +13,7 @@ body {
 }
 
 .app {
-  max-width: 980px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 24px 20px 32px;
 }
@@ -35,20 +35,41 @@ body {
   font-size: 0.95rem;
 }
 
+.octave-shift {
+  margin-top: 10px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+.octave-shift strong {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.octave-range {
+  opacity: 0.75;
+}
+
 .piano-wrap {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   margin-bottom: 28px;
+  overflow-x: auto;
+  padding-bottom: 8px;
 }
 
 .piano {
   position: relative;
   display: flex;
+  flex-wrap: nowrap;
   height: 220px;
   padding: 12px;
   background: #111827;
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --white-key-width: 38px;
+  --white-key-gap: 1px;
+  --black-key-width: 24px;
 }
 
 .key {
@@ -58,12 +79,13 @@ body {
 }
 
 .key.white {
-  width: 56px;
+  width: var(--white-key-width);
+  flex-shrink: 0;
   height: 100%;
   background: linear-gradient(180deg, #fefefe 0%, #e8e8e8 100%);
   border: 1px solid #bbb;
   border-radius: 0 0 6px 6px;
-  margin-right: 1px;
+  margin-right: var(--white-key-gap);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -82,10 +104,15 @@ body {
   transform: translateY(2px);
 }
 
+.key.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .key.black {
   position: absolute;
   top: 12px;
-  width: 34px;
+  width: var(--black-key-width);
   height: 130px;
   background: linear-gradient(180deg, #2d2d2d 0%, #111 100%);
   border-radius: 0 0 4px 4px;
@@ -105,13 +132,13 @@ body {
 }
 
 .key-label {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
   opacity: 0.7;
 }
 
 .key-note {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   opacity: 0.45;
   margin-top: 2px;
 }

@@ -91,79 +91,236 @@
 
   angular.module("heypiano").controller("PianoCtrl", function ($scope, AudioService, $window) {
     var vm = this;
-    var WHITE_KEY_WIDTH = 56;
-    var keyToNote = {};
-    var noteToKey = {};
+    var WHITE_KEY_WIDTH = 38;
+    var WHITE_KEY_GAP = 1;
+    var BLACK_KEY_WIDTH = 24;
+    var OCTAVE_SHIFT_MIN = -2;
+    var OCTAVE_SHIFT_MAX = 2;
+    var keyToBaseNote = {};
 
-    var layout = [
-      { note: "C4", type: "white", label: "A" },
-      { note: "C#4", type: "black", label: "W", afterWhite: 0 },
-      { note: "D4", type: "white", label: "S" },
-      { note: "D#4", type: "black", label: "E", afterWhite: 1 },
-      { note: "E4", type: "white", label: "D" },
-      { note: "F4", type: "white", label: "F" },
-      { note: "F#4", type: "black", label: "T", afterWhite: 3 },
-      { note: "G4", type: "white", label: "G" },
-      { note: "G#4", type: "black", label: "Y", afterWhite: 4 },
-      { note: "A4", type: "white", label: "H" },
-      { note: "A#4", type: "black", label: "U", afterWhite: 5 },
-      { note: "B4", type: "white", label: "J" },
-      { note: "C5", type: "white", label: "K" },
-      { note: "C#5", type: "black", label: "O", afterWhite: 7 },
-      { note: "D5", type: "white", label: "L" },
-      { note: "D#5", type: "black", label: "P", afterWhite: 8 },
-      { note: "E5", type: "white", label: ";" },
-      { note: "F5", type: "white", label: "'" },
+    // 白键按钢琴顺序排列；黑键通过 afterWhiteNote 挂在对应白键右侧
+    var whiteLayout = [
+      { note: "C3", label: "Z", row: "z" },
+      { note: "D3", label: "X", row: "z" },
+      { note: "E3", label: "C", row: "z" },
+      { note: "F3", label: "V", row: "z" },
+      { note: "G3", label: "B", row: "z" },
+      { note: "A3", label: "N", row: "z" },
+      { note: "B3", label: "M", row: "z" },
+      { note: "C4", label: "A", row: "a" },
+      { note: "D4", label: "S", row: "a" },
+      { note: "E4", label: "D", row: "a" },
+      { note: "F4", label: "F", row: "a" },
+      { note: "G4", label: "G", row: "a" },
+      { note: "A4", label: "H", row: "a" },
+      { note: "B4", label: "J", row: "a" },
+      { note: "C5", label: "K", row: "a" },
+      { note: "D5", label: "L", row: "a" },
+      { note: "E5", label: ";", row: "a" },
+      { note: "F5", label: "'", row: "a" },
+      { note: "G5", label: "W", row: "q" },
+      { note: "A5", label: "E", row: "q" },
+      { note: "B5", label: "R", row: "q" },
+      { note: "C6", label: "T", row: "q" },
+      { note: "D6", label: "Y", row: "q" },
+      { note: "E6", label: "U", row: "q" },
+      { note: "F6", label: "I", row: "q" },
+      { note: "G6", label: "O", row: "q" },
+      { note: "A6", label: "P", row: "q" },
+      { note: "B6", label: "Q", row: "q" },
+    ];
+
+    var blackLayout = [
+      { note: "C#3", label: "1", row: "digit", afterWhiteNote: "C3" },
+      { note: "D#3", label: "2", row: "digit", afterWhiteNote: "D3" },
+      { note: "F#3", label: "4", row: "digit", afterWhiteNote: "F3" },
+      { note: "G#3", label: "5", row: "digit", afterWhiteNote: "G3" },
+      { note: "A#3", label: "6", row: "digit", afterWhiteNote: "A3" },
+      { note: "C#4", label: "3", row: "digit", afterWhiteNote: "C4" },
+      { note: "D#4", label: "7", row: "digit", afterWhiteNote: "D4" },
+      { note: "F#4", label: "8", row: "digit", afterWhiteNote: "F4" },
+      { note: "G#4", label: "9", row: "digit", afterWhiteNote: "G4" },
+      { note: "A#4", label: "0", row: "digit", afterWhiteNote: "A4" },
+      { note: "C#5", label: "-", row: "digit", afterWhiteNote: "C5" },
+      { note: "D#5", label: "=", row: "digit", afterWhiteNote: "D5" },
+      { note: "F#5", label: "[", row: "digit", afterWhiteNote: "F5" },
+      { note: "G#5", label: "]", row: "digit", afterWhiteNote: "G5" },
+      { note: "A#5", label: "\\", row: "digit", afterWhiteNote: "A5" },
+      { note: "C#6", label: "`", row: "digit", afterWhiteNote: "C6" },
+      { note: "D#6", label: ",", row: "digit", afterWhiteNote: "D6" },
+      { note: "F#6", label: ".", row: "digit", afterWhiteNote: "F6" },
+      { note: "G#6", label: "/", row: "digit", afterWhiteNote: "G6" },
     ];
 
     vm.whiteKeys = [];
     vm.blackKeys = [];
     vm.pressed = {};
+    vm.octaveShift = 0;
+    vm.octaveShiftMin = OCTAVE_SHIFT_MIN;
+    vm.octaveShiftMax = OCTAVE_SHIFT_MAX;
+    vm.rangeLabel = "C3 – B6";
     vm.noteDown = noteDown;
     vm.noteUp = noteUp;
 
-    layout.forEach(function (item) {
-      var code;
+    function labelToCode(label) {
+      var specials = {
+        ";": "Semicolon",
+        "'": "Quote",
+        ",": "Comma",
+        ".": "Period",
+        "/": "Slash",
+        "[": "BracketLeft",
+        "]": "BracketRight",
+        "\\": "Backslash",
+        "-": "Minus",
+        "=": "Equal",
+        "`": "Backquote",
+      };
 
-      if (item.label === ";") {
-        code = "Semicolon";
-      } else if (item.label === "'") {
-        code = "Quote";
-      } else {
-        code = "Key" + item.label.toUpperCase();
+      if (specials[label]) {
+        return specials[label];
       }
 
-      keyToNote[code] = item.note;
-      noteToKey[item.note] = code;
-
-      if (item.type === "white") {
-        vm.whiteKeys.push({ note: item.note, label: item.label });
-      } else {
-        vm.blackKeys.push({
-          note: item.note,
-          label: item.label,
-          left: item.afterWhite * WHITE_KEY_WIDTH + WHITE_KEY_WIDTH * 0.72,
-        });
+      if (/^\d$/.test(label)) {
+        return "Digit" + label;
       }
+
+      return "Key" + label.toUpperCase();
+    }
+
+    function whiteStep() {
+      return WHITE_KEY_WIDTH + WHITE_KEY_GAP;
+    }
+
+    function blackKeyLeft(afterWhiteIndex, pitch) {
+      var step = whiteStep();
+      var base = afterWhiteIndex * step + WHITE_KEY_WIDTH;
+
+      if (pitch === "D#" || pitch === "A#") {
+        return base - BLACK_KEY_WIDTH * 0.88;
+      }
+
+      return base - BLACK_KEY_WIDTH * 1.12;
+    }
+
+    function pitchName(note) {
+      return note.replace(/\d+$/, "");
+    }
+
+    var whiteIndexByNote = {};
+
+    whiteLayout.forEach(function (item, index) {
+      keyToBaseNote[labelToCode(item.label)] = item.note;
+      whiteIndexByNote[item.note] = index;
+      vm.whiteKeys.push({
+        baseNote: item.note,
+        note: item.note,
+        label: item.label,
+        row: item.row,
+      });
     });
 
-    function noteDown(note) {
-      if (vm.pressed[note]) {
+    blackLayout.forEach(function (item) {
+      var afterIndex = whiteIndexByNote[item.afterWhiteNote];
+      if (afterIndex === undefined) {
+        return;
+      }
+
+      keyToBaseNote[labelToCode(item.label)] = item.note;
+      vm.blackKeys.push({
+        baseNote: item.note,
+        note: item.note,
+        label: item.label,
+        row: item.row,
+        left: blackKeyLeft(afterIndex, pitchName(item.note)),
+      });
+    });
+
+    function transposeNote(baseNote, octaveShift) {
+      var match = baseNote.match(/^([A-G]#?)(\d)$/);
+      if (!match) {
+        return baseNote;
+      }
+
+      var pitch = match[1];
+      var octave = parseInt(match[2], 10) + octaveShift;
+      if (octave < 0 || octave > 9) {
+        return null;
+      }
+
+      return pitch + octave;
+    }
+
+    function refreshKeyNotes() {
+      var lowest = null;
+      var highest = null;
+
+      vm.whiteKeys.forEach(function (key) {
+        key.note = transposeNote(key.baseNote, vm.octaveShift);
+        if (key.note) {
+          if (!lowest) {
+            lowest = key.note;
+          }
+          highest = key.note;
+        }
+      });
+      vm.blackKeys.forEach(function (key) {
+        key.note = transposeNote(key.baseNote, vm.octaveShift);
+        if (key.note && (!highest || key.note > highest)) {
+          highest = key.note;
+        }
+      });
+
+      vm.rangeLabel = lowest && highest ? lowest + " – " + highest : "";
+    }
+
+    function releaseAllNotes() {
+      Object.keys(vm.pressed).forEach(function (baseNote) {
+        if (vm.pressed[baseNote]) {
+          noteUp(baseNote);
+        }
+      });
+    }
+
+    function shiftOctave(delta) {
+      var next = vm.octaveShift + delta;
+      if (next < OCTAVE_SHIFT_MIN || next > OCTAVE_SHIFT_MAX) {
+        return false;
+      }
+
+      releaseAllNotes();
+      vm.octaveShift = next;
+      refreshKeyNotes();
+      return true;
+    }
+
+    function soundingNote(baseNote) {
+      return transposeNote(baseNote, vm.octaveShift);
+    }
+
+    function noteDown(baseNote) {
+      if (vm.pressed[baseNote]) {
+        return;
+      }
+
+      var note = soundingNote(baseNote);
+      if (!note) {
         return;
       }
 
       AudioService.resume();
-      vm.pressed[note] = true;
+      vm.pressed[baseNote] = note;
       AudioService.playNote(note);
     }
 
-    function noteUp(note) {
-      if (!vm.pressed[note]) {
+    function noteUp(baseNote) {
+      var sounding = vm.pressed[baseNote];
+      if (!sounding) {
         return;
       }
 
-      vm.pressed[note] = false;
-      AudioService.stopNote(note);
+      vm.pressed[baseNote] = false;
+      AudioService.stopNote(sounding);
     }
 
     function onKeyDown(event) {
@@ -171,35 +328,53 @@
         return;
       }
 
-      var note = keyToNote[event.code];
-      if (!note) {
+      if (event.code === "ArrowLeft") {
+        event.preventDefault();
+        if (shiftOctave(-1)) {
+          $scope.$apply();
+        }
+        return;
+      }
+
+      if (event.code === "ArrowRight") {
+        event.preventDefault();
+        if (shiftOctave(1)) {
+          $scope.$apply();
+        }
+        return;
+      }
+
+      var baseNote = keyToBaseNote[event.code];
+      if (!baseNote) {
         return;
       }
 
       event.preventDefault();
-      noteDown(note);
+      noteDown(baseNote);
       $scope.$apply();
     }
 
     function onKeyUp(event) {
-      var note = keyToNote[event.code];
-      if (!note) {
+      if (event.code === "ArrowLeft" || event.code === "ArrowRight") {
+        return;
+      }
+
+      var baseNote = keyToBaseNote[event.code];
+      if (!baseNote) {
         return;
       }
 
       event.preventDefault();
-      noteUp(note);
+      noteUp(baseNote);
       $scope.$apply();
     }
 
     function onWindowBlur() {
-      Object.keys(vm.pressed).forEach(function (note) {
-        if (vm.pressed[note]) {
-          noteUp(note);
-        }
-      });
+      releaseAllNotes();
       $scope.$apply();
     }
+
+    refreshKeyNotes();
 
     angular.element($window).on("keydown", onKeyDown);
     angular.element($window).on("keyup", onKeyUp);
